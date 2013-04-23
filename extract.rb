@@ -2,8 +2,6 @@
 
 require 'sqlite3'
 
-conversations = {}
-
 db = SQLite3::Database.new('sms.db')
 db.execute("SELECT address, text, date, flags, is_madrid, madrid_handle, madrid_flags FROM message ORDER BY date") do |row|
   address = row[0]
@@ -13,6 +11,8 @@ db.execute("SELECT address, text, date, flags, is_madrid, madrid_handle, madrid_
   is_madrid = row[4]
   madrid_handle = row[5]
   madrid_flags = row[6]
+
+  next if text.nil? # No need parsing blank messages
 
   output = ""
 
@@ -28,8 +28,11 @@ db.execute("SELECT address, text, date, flags, is_madrid, madrid_handle, madrid_
       output += "Rcvd: #{address}"
     elsif flags == 3 # Sent
       output += "Sent: #{address}"
+    elsif flags == 35 # Send error
+      output += "Sent: #{address} **Failed to send**"
+    else
+      output += "Unkn: #{address} (Flag: #{flags})"
     end
-
   end
 
   output += "\n"
